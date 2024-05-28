@@ -5,8 +5,17 @@ import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
 import TvShowEpisode from "./TvShowEpisode";
 
-function Episodes({ id, seasonNumber }: { id: number; seasonNumber: number }) {
+function Episodes({
+  id,
+  seasonNumber,
+  numberOfSeasons,
+}: {
+  id: number;
+  seasonNumber: number;
+  numberOfSeasons: number;
+}) {
   const [selectedEpisode, setSelectedEpisode] = useState<string>("all");
+  const [_seasonNumber, setSeasonNumber] = useState<number>(seasonNumber);
 
   const fetchEpisodes = async (id: number, seasonNumber: number) => {
     const response = await moviedb.seasonInfo({ id, season_number: seasonNumber });
@@ -74,7 +83,7 @@ function Episodes({ id, seasonNumber }: { id: number; seasonNumber: number }) {
                   <TvShowEpisode
                     showId={id}
                     seasonNumber={seasonNumber}
-                    episodeNumber={episode.episode_number ? episode.episode_number : 0}
+                    _episodeNumber={episode.episode_number ? episode.episode_number : 0}
                   />
                 }
               />
@@ -97,3 +106,19 @@ function Episodes({ id, seasonNumber }: { id: number; seasonNumber: number }) {
 }
 
 export default Episodes;
+// <ActionPanel>
+//         <Action
+//           title="Show Next Season"
+//           onAction={() => {
+//             console.log("LOG: _numberOfSeasons:", _seasonNumber);
+//             if (_seasonNumber < numberOfSeasons) {
+//               setSeasonNumber(seasonNumber + 1);
+//               console.log("LOG: seasonNumber:", _seasonNumber);
+//             } else {
+//               setSeasonNumber(0);
+//             }
+//           }}
+//           shortcut={{ modifiers: ["cmd"], key: "arrowRight" }}
+//         />
+//       </ActionPanel>
+//

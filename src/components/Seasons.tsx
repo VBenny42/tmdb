@@ -24,6 +24,8 @@ function Seasons({ id }: { id: number }) {
       selectedSeason === "all" || selectedSeason === season.season_number?.toString() || season.season_number === 0,
   );
 
+  const zeroInSeasons = filteredSeasons.some((season) => season.season_number === 0);
+
   return (
     <Grid
       aspectRatio="2/3"
@@ -57,7 +59,13 @@ function Seasons({ id }: { id: number }) {
               <Action.Push
                 title="Show Episodes for Season"
                 icon={Icon.Play}
-                target={<Episodes id={id} seasonNumber={!season.season_number ? 0 : season.season_number} />}
+                target={
+                  <Episodes
+                    id={id}
+                    seasonNumber={!season.season_number ? 0 : season.season_number}
+                    numberOfSeasons={zeroInSeasons ? filteredSeasons.length - 1 : filteredSeasons.length}
+                  />
+                }
               />
               <Action.OpenInBrowser
                 url={`https://www.themoviedb.org/tv/${id}/season/${season.season_number}`}

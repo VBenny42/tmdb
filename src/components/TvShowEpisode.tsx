@@ -2,16 +2,20 @@ import { Action, ActionPanel, Color, Detail, Icon, showToast, Toast } from "@ray
 import { format } from "date-fns";
 import { useCachedPromise } from "@raycast/utils";
 import { moviedb } from "../api";
+import { useState } from "react";
 
 export default function TvShowEpisode({
   showId,
   seasonNumber,
-  episodeNumber,
+  _episodeNumber,
 }: {
   showId: number;
   seasonNumber: number;
-  episodeNumber: number;
+  _episodeNumber: number;
 }) {
+  const [episodeNumber, setEpisodeNumber] = useState<number>(_episodeNumber);
+
+  // const { }
   const { data: episodeDetails, isLoading: isLoadingEpisodeDetails } = useCachedPromise(
     async (showId, seasonNumber, episodeNumber) => {
       if (showId && seasonNumber && episodeNumber) {
@@ -78,28 +82,28 @@ export default function TvShowEpisode({
               shortcut={{ modifiers: ["cmd"], key: "i" }}
             />
           ) : null}
-          <Action.Push
+          <Action
             title="Next Episode"
             icon={Icon.ArrowRight}
-            target={
-              <TvShowEpisode
-                showId={showId}
-                seasonNumber={seasonNumber}
-                episodeNumber={episodeNumber < seasonLength ? episodeNumber + 1 : 1}
-              />
-            }
+            onAction={() => {
+              if (episodeNumber < seasonLength) {
+                setEpisodeNumber(episodeNumber + 1);
+              } else {
+                setEpisodeNumber(1);
+              }
+            }}
             shortcut={{ modifiers: ["cmd"], key: "arrowRight" }}
           />
-          <Action.Push
+          <Action
             title="Previous Episode"
             icon={Icon.ArrowLeft}
-            target={
-              <TvShowEpisode
-                showId={showId}
-                seasonNumber={seasonNumber}
-                episodeNumber={episodeNumber > 1 ? episodeNumber - 1 : seasonLength}
-              />
-            }
+            onAction={() => {
+              if (episodeNumber > 1) {
+                setEpisodeNumber(episodeNumber - 1);
+              } else {
+                setEpisodeNumber(seasonLength);
+              }
+            }}
             shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
           />
         </ActionPanel>
