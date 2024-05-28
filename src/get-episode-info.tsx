@@ -39,7 +39,11 @@ export default function Command() {
       return results.results;
     },
     [query],
-    { execute: query.length > 0, keepPreviousData: true },
+    {
+      execute: query.length > 0,
+      keepPreviousData: true,
+      initialData: trendingResults,
+    },
   );
 
   const showTrendingSection = !searchResults || searchResults.length === 0 || query.length === 0;
@@ -50,7 +54,7 @@ export default function Command() {
       onSearchTextChange={setQuery}
       throttle
       isShowingDetail
-      searchBarPlaceholder="Search for a movie or a TV show"
+      searchBarPlaceholder="Search for a TV show"
     >
       {showTrendingSection ? (
         <List.Section title="Trending">
