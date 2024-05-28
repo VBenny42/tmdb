@@ -2,8 +2,6 @@ import { Action, ActionPanel, Color, Detail, Icon, showToast, Toast } from "@ray
 import { format } from "date-fns";
 import { useCachedPromise } from "@raycast/utils";
 import { moviedb } from "../api";
-import Posters from "./Posters";
-import Backdrops from "./Backdrops";
 
 export default function TvShowEpisode({
   showId,
@@ -17,7 +15,15 @@ export default function TvShowEpisode({
   const { data: episodeDetails, isLoading: isLoadingEpisodeDetails } = useCachedPromise(
     async (showId, seasonNumber, episodeNumber) => {
       if (showId && seasonNumber && episodeNumber) {
-        return await moviedb.episodeInfo({ season_number: seasonNumber, episode_number: episodeNumber, id: showId });
+        const seasonLength = await moviedb.seasonInfo({ id: showId, season_number: seasonNumber }).then((response) => {
+          return response.episodes?.length;
+        });
+        const episodeInfo = await moviedb.episodeInfo({
+          season_number: seasonNumber,
+          episode_number: episodeNumber,
+          id: showId,
+        });
+        return { ...episodeInfo, seasonLength };
       }
     },
     [showId, seasonNumber, episodeNumber],
@@ -34,8 +40,9 @@ export default function TvShowEpisode({
   const title = episodeDetails.name ?? "Unknown Name";
   const firstAirDate = episodeDetails.air_date ? format(new Date(episodeDetails.air_date ?? ""), "PP") : "Unknown";
   const rating = episodeDetails.vote_average ? episodeDetails.vote_average.toFixed(1) : "No Ratings";
+  const seasonLength = episodeDetails.seasonLength ?? 0;
 
-  const markdown = `# ${title}\n![TV Show Banner](https://image.tmdb.org/t/p/w500/${episodeDetails.still_path})\n\n${
+  const markdown = `![TV Show Banner](https://image.tmdb.org/t/p/w500/${episodeDetails.still_path})\n\n${
     episodeDetails.overview ?? ""
   }`;
 
@@ -47,6 +54,10 @@ export default function TvShowEpisode({
         <Detail.Metadata>
           <Detail.Metadata.Label title="Title" text={title} />
           <Detail.Metadata.Label title="Air Date" text={firstAirDate} />
+          <Detail.Metadata.TagList title="Season and Episode Number">
+            <Detail.Metadata.TagList.Item text={`${seasonNumber}`} color={Color.Blue} />
+            <Detail.Metadata.TagList.Item text={`${episodeNumber}`} color={Color.Green} />
+          </Detail.Metadata.TagList>
           <Detail.Metadata.Label
             title="Rating"
             text={`${rating}${episodeDetails.vote_count ? ` (from ${episodeDetails.vote_count} votes)` : ""}`}
@@ -68,16 +79,28 @@ export default function TvShowEpisode({
             />
           ) : null}
           <Action.Push
-            title="Show Posters"
-            icon={Icon.Image}
-            target={episodeDetails.id !== undefined && <Posters id={episodeDetails.id ?? 0} type="tv" />}
-            shortcut={{ modifiers: ["cmd", "shift"], key: "p" }}
+            title="Next Episode"
+            icon={Icon.ArrowRight}
+            target={
+              <TvShowEpisode
+                showId={showId}
+                seasonNumber={seasonNumber}
+                episodeNumber={episodeNumber < seasonLength ? episodeNumber + 1 : 1}
+              />
+            }
+            shortcut={{ modifiers: ["cmd"], key: "arrowRight" }}
           />
           <Action.Push
-            title="Show Backdrops"
-            icon={Icon.Image}
-            target={episodeDetails.id !== undefined && <Backdrops id={episodeDetails.id ?? 0} type="tv" />}
-            shortcut={{ modifiers: ["cmd", "shift"], key: "b" }}
+            title="Previous Episode"
+            icon={Icon.ArrowLeft}
+            target={
+              <TvShowEpisode
+                showId={showId}
+                seasonNumber={seasonNumber}
+                episodeNumber={episodeNumber > 1 ? episodeNumber - 1 : seasonLength}
+              />
+            }
+            shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
           />
         </ActionPanel>
       }

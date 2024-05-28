@@ -13,7 +13,18 @@ function Episodes({ id, seasonNumber }: { id: number; seasonNumber: number }) {
     return response.episodes || [];
   };
 
-  const { data: episodeData, isLoading } = useCachedPromise(fetchEpisodes, [id, seasonNumber], {
+  const { data: episodeData, isLoading: isLoadingEpisodes } = useCachedPromise(fetchEpisodes, [id, seasonNumber], {
+    onError: async (error) => {
+      await showToast(Toast.Style.Failure, "Failed to fetch data", error.message);
+    },
+  });
+
+  const fetchShowInfo = async (id: number) => {
+    const response = await moviedb.tvInfo({ id });
+    return response.name || "Unknown Show";
+  };
+
+  const { data: showInfo, isLoading: isLoadingInfo } = useCachedPromise(fetchShowInfo, [id], {
     onError: async (error) => {
       await showToast(Toast.Style.Failure, "Failed to fetch data", error.message);
     },
@@ -30,9 +41,9 @@ function Episodes({ id, seasonNumber }: { id: number; seasonNumber: number }) {
     <Grid
       aspectRatio="16/9"
       fit={Grid.Fit.Fill}
-      isLoading={isLoading}
+      isLoading={isLoadingEpisodes || isLoadingInfo}
       columns={3}
-      searchBarPlaceholder={`Filter TV episodes by name`}
+      searchBarPlaceholder={`Filter through ${showInfo} episodes by name`}
       navigationTitle={`TV Episodes - ${selectedEpisode === "all" ? "All" : selectedEpisode}`}
       searchBarAccessory={
         <Grid.Dropdown tooltip="Filter by Episode" onChange={setSelectedEpisode} value={selectedEpisode}>
