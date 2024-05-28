@@ -8,10 +8,14 @@ export default function TvShowEpisode({
   showId,
   seasonNumber,
   _episodeNumber,
+  episodeStart,
+  episodeEnd,
 }: {
   showId: number;
   seasonNumber: number;
   _episodeNumber: number;
+  episodeStart: number;
+  episodeEnd: number;
 }) {
   const [episodeNumber, setEpisodeNumber] = useState<number>(_episodeNumber);
 
@@ -19,21 +23,18 @@ export default function TvShowEpisode({
   const { data: episodeDetails, isLoading: isLoadingEpisodeDetails } = useCachedPromise(
     async (showId, seasonNumber, episodeNumber) => {
       if (showId && seasonNumber && episodeNumber) {
-        const seasonLength = await moviedb.seasonInfo({ id: showId, season_number: seasonNumber }).then((response) => {
-          return response.episodes?.length;
-        });
         const episodeInfo = await moviedb.episodeInfo({
           season_number: seasonNumber,
           episode_number: episodeNumber,
           id: showId,
         });
-        return { ...episodeInfo, seasonLength };
+        return episodeInfo;
       }
     },
     [showId, seasonNumber, episodeNumber],
     {
       onError: async (error) => {
-        await showToast(Toast.Style.Failure, "Failed to fetch data", error.message);
+        await showToast(Toast.Style.Failure, `Failed to fetch data ${episodeNumber}`, error.message);
       },
     },
   );
@@ -44,7 +45,6 @@ export default function TvShowEpisode({
   const title = episodeDetails.name ?? "Unknown Name";
   const firstAirDate = episodeDetails.air_date ? format(new Date(episodeDetails.air_date ?? ""), "PP") : "Unknown";
   const rating = episodeDetails.vote_average ? episodeDetails.vote_average.toFixed(1) : "No Ratings";
-  const seasonLength = episodeDetails.seasonLength ?? 0;
 
   const markdown = `![TV Show Banner](https://image.tmdb.org/t/p/w500/${episodeDetails.still_path})\n\n${
     episodeDetails.overview ?? ""
@@ -86,10 +86,10 @@ export default function TvShowEpisode({
             title="Next Episode"
             icon={Icon.ArrowRight}
             onAction={() => {
-              if (episodeNumber < seasonLength) {
+              if (episodeNumber < episodeEnd) {
                 setEpisodeNumber(episodeNumber + 1);
               } else {
-                setEpisodeNumber(1);
+                setEpisodeNumber(episodeStart);
               }
             }}
             shortcut={{ modifiers: ["cmd"], key: "arrowRight" }}
@@ -98,10 +98,10 @@ export default function TvShowEpisode({
             title="Previous Episode"
             icon={Icon.ArrowLeft}
             onAction={() => {
-              if (episodeNumber > 1) {
+              if (episodeNumber > episodeStart) {
                 setEpisodeNumber(episodeNumber - 1);
               } else {
-                setEpisodeNumber(seasonLength);
+                setEpisodeNumber(episodeEnd);
               }
             }}
             shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}

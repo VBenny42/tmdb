@@ -39,6 +39,9 @@ function Episodes({
     },
   });
 
+  const episodeStart = episodeData?.[0]?.episode_number || 0;
+  const episodeEnd = episodeData?.[episodeData.length - 1]?.episode_number || 0;
+
   const filteredEpisodes = ((episodeData as SimpleEpisode[]) || []).filter(
     (episode) =>
       selectedEpisode === "all" ||
@@ -84,6 +87,8 @@ function Episodes({
                     showId={id}
                     seasonNumber={seasonNumber}
                     _episodeNumber={episode.episode_number ? episode.episode_number : 0}
+                    episodeStart={episodeStart}
+                    episodeEnd={episodeEnd}
                   />
                 }
               />
@@ -95,6 +100,19 @@ function Episodes({
                 content={`https://www.themoviedb.org/tv/${id}/season/${seasonNumber}/episode/${episode.episode_number}`}
                 title={`Copy TMDB URL`}
                 shortcut={{ modifiers: ["cmd"], key: "." }}
+              />
+              <Action
+                title="Next Season"
+                icon={Icon.ArrowRight}
+                onAction={() => {
+                  let setNumber = 0;
+                  if (_seasonNumber < numberOfSeasons) {
+                    setNumber = _seasonNumber + 1;
+                  }
+                  setSeasonNumber(setNumber);
+                  console.log("LOG: setNumber:", setNumber);
+                }}
+                shortcut={{ modifiers: ["cmd"], key: "arrowRight" }}
               />
             </ActionPanel>
           }
