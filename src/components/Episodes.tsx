@@ -57,8 +57,8 @@ function Episodes({
     <List
       isLoading={isLoadingEpisodes || isLoadingInfo}
       isShowingDetail
-      searchBarPlaceholder={`Filter through ${showInfo} - S${_seasonNumber} episodes by name`}
-      navigationTitle={`TV Episodes - ${selectedEpisode === "all" ? "All" : selectedEpisode}`}
+      searchBarPlaceholder={`Filter through ${showInfo} episodes by name`}
+      navigationTitle={`${episodeInfo?.seasonName} - ${selectedEpisode === "all" ? "All" : selectedEpisode}`}
       searchBarAccessory={
         <List.Dropdown tooltip="Filter by Episode" onChange={setSelectedEpisode} value={selectedEpisode}>
           <List.Dropdown.Section title="Episodes">
