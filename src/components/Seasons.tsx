@@ -26,6 +26,9 @@ function Seasons({ id }: { id: number }) {
 
   const zeroInSeasons = filteredSeasons.some((season) => season.season_number === 0);
 
+  const seasonStart = seasonData?.[0].season_number || 0;
+  const seasonEnd = seasonData?.[seasonData.length - 1].season_number || 0;
+
   return (
     <Grid
       aspectRatio="2/3"
@@ -63,7 +66,8 @@ function Seasons({ id }: { id: number }) {
                   <Episodes
                     id={id}
                     seasonNumber={!season.season_number ? 0 : season.season_number}
-                    numberOfSeasons={zeroInSeasons ? filteredSeasons.length - 1 : filteredSeasons.length}
+                    seasonStart={seasonStart}
+                    seasonEnd={seasonEnd}
                   />
                 }
               />
