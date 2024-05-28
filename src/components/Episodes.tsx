@@ -3,6 +3,7 @@ import { moviedb } from "../api";
 import { SimpleEpisode } from "moviedb-promise";
 import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
+import TvShowEpisode from "./TvShowEpisode";
 
 function Episodes({
   id,
@@ -18,10 +19,10 @@ function Episodes({
 
   const fetchEpisodes = async (id: number, seasonNumber: number) => {
     const response = await moviedb.seasonInfo({ id, season_number: seasonNumber });
-    return response.episodes || [];
+    return { episodes: response.episodes || [], seasonName: response.name };
   };
 
-  const { data: episodeData, isLoading: isLoadingEpisodes } = useCachedPromise(fetchEpisodes, [id, seasonNumber], {
+  const { data: episodeInfo, isLoading: isLoadingEpisodes } = useCachedPromise(fetchEpisodes, [id, _seasonNumber], {
     onError: async (error) => {
       await showToast(Toast.Style.Failure, "Failed to fetch data", error.message);
     },
@@ -38,6 +39,8 @@ function Episodes({
     },
   });
 
+  const episodeData = episodeInfo?.episodes;
+
   const filteredEpisodes = ((episodeData as SimpleEpisode[]) || []).filter(
     (episode) =>
       selectedEpisode === "all" ||
@@ -49,7 +52,7 @@ function Episodes({
     <List
       isLoading={isLoadingEpisodes || isLoadingInfo}
       isShowingDetail
-      searchBarPlaceholder={`Filter through ${showInfo} episodes by name`}
+      searchBarPlaceholder={`Filter through ${showInfo} - S${_seasonNumber} episodes by name`}
       navigationTitle={`TV Episodes - ${selectedEpisode === "all" ? "All" : selectedEpisode}`}
       searchBarAccessory={
         <List.Dropdown tooltip="Filter by Episode" onChange={setSelectedEpisode} value={selectedEpisode}>
@@ -70,6 +73,9 @@ function Episodes({
         const markdown = `![TV Show Banner](https://image.tmdb.org/t/p/w500${episode.still_path})\n\n${
           episode.overview || ""
         }\n\n**${episode.name}**`;
+        const episodeStart = episodeData?.[0].episode_number || 0;
+        const episodeEnd = episodeData?.[episodeData.length - 1].episode_number || 0;
+
         return (
           <List.Item
             title={`${episode.name || "Unknown Episode"}`}
@@ -78,6 +84,19 @@ function Episodes({
             detail={<List.Item.Detail markdown={markdown} />}
             actions={
               <ActionPanel>
+                <Action.Push
+                  title="Show Episode Details"
+                  target={
+                    <TvShowEpisode
+                      showId={id}
+                      seasonNumber={_seasonNumber}
+                      _episodeNumber={episode.episode_number || 0}
+                      episodeStart={episodeStart}
+                      episodeEnd={episodeEnd}
+                      seasonName={episodeInfo?.seasonName}
+                    />
+                  }
+                />
                 <Action.OpenInBrowser
                   title="Open in TMDB"
                   url={`https://www.themoviedb.org/tv/${episode.show_id}/season/${episode.season_number}/episode/${episode.episode_number}`}
@@ -89,6 +108,36 @@ function Episodes({
                     shortcut={{ modifiers: ["cmd"], key: "i" }}
                   />
                 ) : null}
+                <ActionPanel.Section>
+                  <Action
+                    icon={Icon.ArrowRight}
+                    title="Next Page"
+                    shortcut={{ modifiers: ["cmd"], key: "arrowRight" }}
+                    onAction={() =>
+                      setSeasonNumber((_seasonNumber) => {
+                        if (_seasonNumber < numberOfSeasons) {
+                          return _seasonNumber + 1;
+                        } else {
+                          return 0;
+                        }
+                      })
+                    }
+                  />
+                  <Action
+                    icon={Icon.ArrowLeft}
+                    title="Previous Page"
+                    shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
+                    onAction={() =>
+                      setSeasonNumber((_seasonNumber) => {
+                        if (_seasonNumber > 0) {
+                          return _seasonNumber - 1;
+                        } else {
+                          return numberOfSeasons;
+                        }
+                      })
+                    }
+                  />
+                </ActionPanel.Section>
               </ActionPanel>
             }
           />

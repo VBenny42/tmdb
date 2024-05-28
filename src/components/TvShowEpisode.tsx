@@ -10,12 +10,14 @@ export default function TvShowEpisode({
   _episodeNumber,
   episodeStart,
   episodeEnd,
+  seasonName,
 }: {
   showId: number;
   seasonNumber: number;
   _episodeNumber: number;
   episodeStart: number;
   episodeEnd: number;
+  seasonName: string;
 }) {
   const [episodeNumber, setEpisodeNumber] = useState<number>(_episodeNumber);
 
@@ -58,6 +60,7 @@ export default function TvShowEpisode({
         <Detail.Metadata>
           <Detail.Metadata.Label title="Title" text={title} />
           <Detail.Metadata.Label title="Air Date" text={firstAirDate} />
+          <Detail.Metadata.Label title="Season Name" text={seasonName} />
           <Detail.Metadata.TagList title="Season and Episode Number">
             <Detail.Metadata.TagList.Item text={`${seasonNumber}`} color={Color.Blue} />
             <Detail.Metadata.TagList.Item text={`${episodeNumber}`} color={Color.Green} />
