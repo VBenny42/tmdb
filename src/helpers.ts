@@ -16,3 +16,17 @@ export function formatMovieDuration(minutes: number): string {
     return `${hoursString}h${minutesString}`;
   }
 }
+
+export function formatTVEpisodeDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  const hoursString = `${hours}`;
+  const minutesString = remainingMinutes < 10 ? `0${remainingMinutes}` : `${remainingMinutes}`;
+
+  if (hours === 0) {
+    return `${minutesString}m`;
+  } else {
+    return `${hoursString}h ${minutesString}m`;
+  }
+}

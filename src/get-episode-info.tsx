@@ -9,6 +9,7 @@ import {
   openCommandPreferences,
   showToast,
   Toast,
+  useNavigation,
 } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { moviedb } from "./api";
@@ -19,6 +20,7 @@ import Posters from "./components/Posters";
 import Backdrops from "./components/Backdrops";
 import Seasons from "./components/Seasons";
 import Episodes from "./components/Episodes";
+import { getSeasonStartEnd } from "./get-current-season";
 
 export default function Command() {
   const preferences = getPreferenceValues();
@@ -79,6 +81,7 @@ function Show({ show }: { show: ShowResponse }) {
   const lastAirDate = show.last_air_date ? format(new Date(show.last_air_date ?? ""), "PP") : "";
 
   const rating = show.vote_average ? show.vote_average.toFixed(1) : "Not Rated";
+  const { push } = useNavigation();
 
   return (
     <List.Item
@@ -134,12 +137,27 @@ function Show({ show }: { show: ShowResponse }) {
             target={show.id !== undefined && <Backdrops id={show.id ?? 0} type="tv" />}
             shortcut={{ modifiers: ["cmd", "shift"], key: "b" }}
           />
-          <Action.Push
+          <Action
             title="Show Current Season From Preferences"
             icon={Icon.Star}
-            target={
-              <Episodes id={getPreferenceValues().currShow} seasonNumber={getPreferenceValues().currShowSeason} />
-            }
+            onAction={() => {
+              const { currShow, currShowSeason } = getPreferenceValues();
+              if (currShow !== undefined && currShowSeason !== undefined) {
+                getSeasonStartEnd().then((data) => {
+                  const { seasonStart, seasonEnd } = data;
+                  push(
+                    <Episodes
+                      id={currShow}
+                      seasonNumber={currShowSeason}
+                      seasonStart={seasonStart}
+                      seasonEnd={seasonEnd}
+                    />,
+                  );
+                });
+              } else {
+                showToast(Toast.Style.Failure, "No show and/or season is set in preferences");
+              }
+            }}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
           <Action icon={Icon.Gear} title="Open Command Preferences" onAction={openCommandPreferences} />

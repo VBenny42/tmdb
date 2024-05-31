@@ -24,8 +24,6 @@ function Seasons({ id }: { id: number }) {
       selectedSeason === "all" || selectedSeason === season.season_number?.toString() || season.season_number === 0,
   );
 
-  const zeroInSeasons = filteredSeasons.some((season) => season.season_number === 0);
-
   const seasonStart = seasonData?.[0].season_number || 0;
   const seasonEnd = seasonData?.[seasonData.length - 1].season_number || 0;
 

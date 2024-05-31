@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { useCachedPromise } from "@raycast/utils";
 import { moviedb } from "../api";
 import { useState } from "react";
+import { formatTVEpisodeDuration } from "../helpers";
 
 export default function TvShowEpisode({
   showId,
@@ -52,6 +53,8 @@ export default function TvShowEpisode({
     episodeDetails.overview ?? ""
   }`;
 
+  const runtime = episodeDetails.runtime ? episodeDetails.runtime : 0;
+
   return (
     <Detail
       markdown={markdown}
@@ -65,6 +68,11 @@ export default function TvShowEpisode({
             <Detail.Metadata.TagList.Item text={`${seasonNumber}`} color={Color.Blue} />
             <Detail.Metadata.TagList.Item text={`${episodeNumber}`} color={Color.Green} />
           </Detail.Metadata.TagList>
+          <Detail.Metadata.Label
+            title="Runtime"
+            text={formatTVEpisodeDuration(runtime)}
+            icon={{ source: Icon.Clock, tintColor: Color.Blue }}
+          />
           <Detail.Metadata.Label
             title="Rating"
             text={`${rating}${episodeDetails.vote_count ? ` (from ${episodeDetails.vote_count} votes)` : ""}`}
