@@ -22,7 +22,6 @@ export default function TvShowEpisode({
 }) {
   const [episodeNumber, setEpisodeNumber] = useState<number>(_episodeNumber);
 
-  // const { }
   const { data: episodeDetails, isLoading: isLoadingEpisodeDetails } = useCachedPromise(
     async (showId, seasonNumber, episodeNumber) => {
       if (showId && seasonNumber && episodeNumber) {
@@ -39,6 +38,7 @@ export default function TvShowEpisode({
       onError: async (error) => {
         await showToast(Toast.Style.Failure, `Failed to fetch data ${episodeNumber}`, error.message);
       },
+      keepPreviousData: true,
     },
   );
 
