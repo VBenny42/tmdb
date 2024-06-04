@@ -96,6 +96,7 @@ function Episodes({
               <ActionPanel>
                 <Action.Push
                   title="Show Episode Details"
+                  icon={Icon.Sidebar}
                   target={
                     <TvShowEpisode
                       showId={id}
