@@ -10,6 +10,7 @@ import {
   showToast,
   Toast,
   useNavigation,
+  LocalStorage,
 } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { moviedb } from "./api";
@@ -21,6 +22,11 @@ import Backdrops from "./components/Backdrops";
 import Seasons from "./components/Seasons";
 import Episodes from "./components/Episodes";
 import { getSeasonStartEnd } from "./get-current-season";
+
+type RecentSearch = {
+  name: string;
+  id: number;
+};
 
 export default function Command() {
   const preferences = getPreferenceValues();
@@ -44,20 +50,48 @@ export default function Command() {
     {
       execute: query.length > 0,
       keepPreviousData: true,
-      initialData: trendingResults,
     },
   );
 
-  const showTrendingSection = !searchResults || searchResults.length === 0 || query.length === 0;
+  const {
+    data: recentSearches,
+    isLoading: isLoadingRecentSearches,
+    revalidate,
+  } = useCachedPromise(async () => {
+    const recentSearchesData = await LocalStorage.getItem<string>("recentSearches");
+    const recentSearches: RecentSearch[] = recentSearchesData ? JSON.parse(recentSearchesData) : [];
+    return (
+      (await Promise.all(
+        recentSearches.map((search) => {
+          return moviedb.tvInfo({ id: search.id });
+        }),
+      )) || []
+    );
+  });
+
+  // NOTE: update recent searches on Push to seasons view
+  // that way we only add to recent searches when the user actually wants to see more info
+
+  const showTrendingSection =
+    (!searchResults || searchResults.length === 0 || query.length === 0) && recentSearches?.length <= 5;
+  const showRecentSearches = !searchResults || searchResults.length === 0 || query.length === 0;
 
   return (
     <List
-      isLoading={isLoadingTrendingResults || isLoadingSearchResults}
+      isLoading={isLoadingTrendingResults || isLoadingSearchResults || isLoadingRecentSearches}
       onSearchTextChange={setQuery}
       throttle
       isShowingDetail
       searchBarPlaceholder="Search for a TV show"
     >
+      {showRecentSearches ? (
+        <List.Section title="Recent Searches">
+          {recentSearches?.map((show) => {
+            return <Show key={show.id} show={show} isInRecentSearches={true} revalidate={revalidate} />;
+          })}
+        </List.Section>
+      ) : null}
+
       {showTrendingSection ? (
         <List.Section title="Trending">
           {trendingResults?.map((result) => {
@@ -75,7 +109,35 @@ export default function Command() {
   );
 }
 
-function Show({ show }: { show: ShowResponse }) {
+const updateRecentSearches = async (search: RecentSearch) => {
+  const recentSearchesData = await LocalStorage.getItem<string>("recentSearches");
+
+  const recentSearchesArray = recentSearchesData ? JSON.parse(recentSearchesData) : [];
+  const newRecentSearches = [
+    search,
+    ...recentSearchesArray.filter((item: RecentSearch) => item.id !== search.id),
+  ].slice(0, 10);
+
+  await LocalStorage.setItem("recentSearches", JSON.stringify(newRecentSearches));
+};
+
+const removeFromRecentSearches = async (search: RecentSearch) => {
+  const recentSearchesData = await LocalStorage.getItem<string>("recentSearches");
+
+  const recentSearchesArray = recentSearchesData ? JSON.parse(recentSearchesData) : [];
+  const newRecentSearches = recentSearchesArray.filter((item: RecentSearch) => item.id !== search.id);
+
+  await LocalStorage.setItem("recentSearches", JSON.stringify(newRecentSearches));
+};
+
+type ShowProps = {
+  show: ShowResponse;
+  isInRecentSearches?: boolean;
+  revalidate?: () => void;
+};
+
+function Show(showProps: ShowProps) {
+  const show = showProps.show;
   const title = show.name ?? show.original_name ?? "Unknown Show";
   const firstAirDate = show.first_air_date ? format(new Date(show.first_air_date ?? ""), "PP") : "Unknown";
   const lastAirDate = show.last_air_date ? format(new Date(show.last_air_date ?? ""), "PP") : "";
@@ -111,10 +173,18 @@ function Show({ show }: { show: ShowResponse }) {
       }
       actions={
         <ActionPanel>
-          <Action.Push
+          <Action
             title="Show Seasons"
             icon={Icon.Image}
-            target={show.id !== undefined && <Seasons id={show.id ?? 0} />}
+            onAction={async () => {
+              if (show.id) {
+                // NOTE: There is a bug where even if revalidate is called, the list doesn't update
+                //       until we go back to root and re-enter the command
+                await updateRecentSearches({ name: title, id: show.id });
+                showProps.revalidate?.();
+                push(<Seasons id={show.id} />);
+              }
+            }}
           />
           <Action.Push title="Show Details" icon={Icon.Sidebar} target={<TvShowDetail show={show} />} />
           <Action.OpenInBrowser url={`https://www.themoviedb.org/tv/${show.id ?? 0}`} />
@@ -160,6 +230,20 @@ function Show({ show }: { show: ShowResponse }) {
             }}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
+          {showProps.isInRecentSearches ? (
+            <ActionPanel.Section>
+              <Action
+                title="Remove From Recent Searches"
+                style={Action.Style.Destructive}
+                icon={Icon.Trash}
+                onAction={async () => {
+                  await removeFromRecentSearches({ name: title, id: show.id ?? 0 });
+                  showProps.revalidate?.();
+                }}
+                shortcut={{ modifiers: ["ctrl"], key: "x" }}
+              />
+            </ActionPanel.Section>
+          ) : null}
           <Action icon={Icon.Gear} title="Open Command Preferences" onAction={openCommandPreferences} />
         </ActionPanel>
       }
