@@ -80,10 +80,8 @@ function Episodes({
 
         let markdown = `![TV Show Banner](https://image.tmdb.org/t/p/w500${episode.still_path})\n\n${overview}`;
 
-        if (overview.length > 210) {
-          markdown = `![TV Show Banner](https://image.tmdb.org/t/p/w500${episode.still_path})\n\n${
-            episode.overview || ""
-          }\n\n**${episode.name}**`;
+        if (episode?.name?.length > 28) {
+          markdown = `${markdown}\n\n**${episode.name}**`;
         }
 
         return (
@@ -96,6 +94,7 @@ function Episodes({
               <ActionPanel>
                 <Action.Push
                   title="Show Episode Details"
+                  icon={Icon.Sidebar}
                   target={
                     <TvShowEpisode
                       showId={id}
