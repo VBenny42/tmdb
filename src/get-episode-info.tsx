@@ -20,7 +20,8 @@ import Posters from "./components/Posters";
 import Backdrops from "./components/Backdrops";
 import Seasons from "./components/Seasons";
 import Episodes from "./components/Episodes";
-import { getSeasonStartEnd } from "./get-current-season";
+import { getSeasonStartEnd } from "./helpers";
+import { RecentSearch, useRecentSearches } from "./hooks";
 
 export default function Command() {
   const preferences = getPreferenceValues();
@@ -44,38 +45,85 @@ export default function Command() {
     {
       execute: query.length > 0,
       keepPreviousData: true,
-      initialData: trendingResults,
     },
   );
 
-  const showTrendingSection = !searchResults || searchResults.length === 0 || query.length === 0;
+  const {
+    recentSearches,
+    recentSearchesWithInfo,
+    isLoading: isLoadingRecentSearches,
+    addRecentSearch,
+    removeRecentSearch,
+  } = useRecentSearches();
+
+  const showTrendingSection =
+    (!searchResults || searchResults.length === 0 || query.length === 0) && (recentSearches?.length ?? 0) <= 5;
+  const showRecentSearches = !searchResults || searchResults.length === 0 || query.length === 0;
 
   return (
     <List
-      isLoading={isLoadingTrendingResults || isLoadingSearchResults}
+      isLoading={isLoadingTrendingResults || isLoadingSearchResults || isLoadingRecentSearches}
       onSearchTextChange={setQuery}
       throttle
       isShowingDetail
       searchBarPlaceholder="Search for a TV show"
     >
+      {showRecentSearches ? (
+        <List.Section title="Recent Searches">
+          {recentSearchesWithInfo?.map((result) => {
+            return (
+              <Show
+                key={result.id}
+                show={result}
+                isInRecentSearches
+                addRecentSearch={addRecentSearch}
+                removeRecentSearch={removeRecentSearch}
+              />
+            );
+          })}
+        </List.Section>
+      ) : null}
+
       {showTrendingSection ? (
         <List.Section title="Trending">
           {trendingResults?.map((result) => {
-            return <Show key={result.id} show={result} />;
+            return (
+              <Show
+                key={result.id}
+                show={result}
+                addRecentSearch={addRecentSearch}
+                removeRecentSearch={removeRecentSearch}
+              />
+            );
           })}
         </List.Section>
       ) : null}
 
       <List.Section title="Search Results">
         {searchResults?.map((result) => {
-          return <Show key={result.id} show={result} />;
+          return (
+            <Show
+              key={result.id}
+              show={result}
+              addRecentSearch={addRecentSearch}
+              removeRecentSearch={removeRecentSearch}
+            />
+          );
         })}
       </List.Section>
     </List>
   );
 }
 
-function Show({ show }: { show: ShowResponse }) {
+type ShowProps = {
+  show: ShowResponse;
+  isInRecentSearches?: boolean;
+  removeRecentSearch?: (search: RecentSearch) => Promise<void>;
+  addRecentSearch?: (search: RecentSearch) => Promise<void>;
+};
+
+function Show(showProps: ShowProps) {
+  const show = showProps.show;
   const title = show.name ?? show.original_name ?? "Unknown Show";
   const firstAirDate = show.first_air_date ? format(new Date(show.first_air_date ?? ""), "PP") : "Unknown";
   const lastAirDate = show.last_air_date ? format(new Date(show.last_air_date ?? ""), "PP") : "";
@@ -114,7 +162,12 @@ function Show({ show }: { show: ShowResponse }) {
           <Action.Push
             title="Show Seasons"
             icon={Icon.Image}
-            target={show.id !== undefined && <Seasons id={show.id ?? 0} />}
+            target={show.id !== undefined && <Seasons id={show.id} />}
+            onPush={async () => {
+              if (show.id) {
+                await showProps.addRecentSearch?.({ name: title, id: show.id });
+              }
+            }}
           />
           <Action.Push title="Show Details" icon={Icon.Sidebar} target={<TvShowDetail show={show} />} />
           <Action.OpenInBrowser url={`https://www.themoviedb.org/tv/${show.id ?? 0}`} />
@@ -160,6 +213,19 @@ function Show({ show }: { show: ShowResponse }) {
             }}
             shortcut={{ modifiers: ["cmd"], key: "d" }}
           />
+          {showProps.isInRecentSearches ? (
+            <ActionPanel.Section>
+              <Action
+                title="Remove From Recent Searches"
+                style={Action.Style.Destructive}
+                icon={Icon.Trash}
+                onAction={async () => {
+                  await showProps.removeRecentSearch?.({ name: title, id: show.id ?? 0 });
+                }}
+                shortcut={{ modifiers: ["ctrl"], key: "x" }}
+              />
+            </ActionPanel.Section>
+          ) : null}
           <Action icon={Icon.Gear} title="Open Command Preferences" onAction={openCommandPreferences} />
         </ActionPanel>
       }

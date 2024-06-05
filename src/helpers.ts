@@ -1,3 +1,6 @@
+import { getPreferenceValues } from "@raycast/api";
+import { moviedb } from "./api";
+
 export function getRating(rating?: number) {
   const STAR = "⭐";
   return rating ? `${rating.toFixed(2)} ${STAR.repeat(Math.round(rating / 2))}` : "Not Rated";
@@ -29,4 +32,15 @@ export function formatTVEpisodeDuration(minutes: number): string {
   } else {
     return `${hoursString}h ${minutesString}m`;
   }
+}
+
+const { currShow } = getPreferenceValues();
+
+export async function getSeasonStartEnd() {
+  const seasons = await moviedb.tvInfo({ id: currShow }).then((response) => response.seasons || []);
+
+  const seasonStart = seasons?.[0].season_number || 0;
+  const seasonEnd = seasons?.[seasons.length - 1].season_number || 0;
+
+  return { seasonStart, seasonEnd };
 }
