@@ -10,7 +10,6 @@ import {
   showToast,
   Toast,
   useNavigation,
-  LocalStorage,
 } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { moviedb } from "./api";
@@ -21,12 +20,8 @@ import Posters from "./components/Posters";
 import Backdrops from "./components/Backdrops";
 import Seasons from "./components/Seasons";
 import Episodes from "./components/Episodes";
-import { getSeasonStartEnd } from "./get-current-season";
-
-type RecentSearch = {
-  name: string;
-  id: number;
-};
+import { getSeasonStartEnd } from "./helpers";
+import { RecentSearch, useRecentSearches } from "./hooks";
 
 export default function Command() {
   const preferences = getPreferenceValues();
@@ -54,26 +49,15 @@ export default function Command() {
   );
 
   const {
-    data: recentSearches,
+    recentSearches,
+    recentSearchesWithInfo,
     isLoading: isLoadingRecentSearches,
-    revalidate,
-  } = useCachedPromise(async () => {
-    const recentSearchesData = await LocalStorage.getItem<string>("recentSearches");
-    const recentSearches: RecentSearch[] = recentSearchesData ? JSON.parse(recentSearchesData) : [];
-    return (
-      (await Promise.all(
-        recentSearches.map((search) => {
-          return moviedb.tvInfo({ id: search.id });
-        }),
-      )) || []
-    );
-  });
-
-  // NOTE: update recent searches on Push to seasons view
-  // that way we only add to recent searches when the user actually wants to see more info
+    addRecentSearch,
+    removeRecentSearch,
+  } = useRecentSearches();
 
   const showTrendingSection =
-    (!searchResults || searchResults.length === 0 || query.length === 0) && recentSearches?.length <= 5;
+    (!searchResults || searchResults.length === 0 || query.length === 0) && (recentSearches?.length ?? 0) <= 5;
   const showRecentSearches = !searchResults || searchResults.length === 0 || query.length === 0;
 
   return (
@@ -86,8 +70,16 @@ export default function Command() {
     >
       {showRecentSearches ? (
         <List.Section title="Recent Searches">
-          {recentSearches?.map((show) => {
-            return <Show key={show.id} show={show} isInRecentSearches={true} revalidate={revalidate} />;
+          {recentSearchesWithInfo?.map((result) => {
+            return (
+              <Show
+                key={result.id}
+                show={result}
+                isInRecentSearches
+                addRecentSearch={addRecentSearch}
+                removeRecentSearch={removeRecentSearch}
+              />
+            );
           })}
         </List.Section>
       ) : null}
@@ -95,45 +87,39 @@ export default function Command() {
       {showTrendingSection ? (
         <List.Section title="Trending">
           {trendingResults?.map((result) => {
-            return <Show key={result.id} show={result} />;
+            return (
+              <Show
+                key={result.id}
+                show={result}
+                addRecentSearch={addRecentSearch}
+                removeRecentSearch={removeRecentSearch}
+              />
+            );
           })}
         </List.Section>
       ) : null}
 
       <List.Section title="Search Results">
         {searchResults?.map((result) => {
-          return <Show key={result.id} show={result} />;
+          return (
+            <Show
+              key={result.id}
+              show={result}
+              addRecentSearch={addRecentSearch}
+              removeRecentSearch={removeRecentSearch}
+            />
+          );
         })}
       </List.Section>
     </List>
   );
 }
 
-const updateRecentSearches = async (search: RecentSearch) => {
-  const recentSearchesData = await LocalStorage.getItem<string>("recentSearches");
-
-  const recentSearchesArray = recentSearchesData ? JSON.parse(recentSearchesData) : [];
-  const newRecentSearches = [
-    search,
-    ...recentSearchesArray.filter((item: RecentSearch) => item.id !== search.id),
-  ].slice(0, 10);
-
-  await LocalStorage.setItem("recentSearches", JSON.stringify(newRecentSearches));
-};
-
-const removeFromRecentSearches = async (search: RecentSearch) => {
-  const recentSearchesData = await LocalStorage.getItem<string>("recentSearches");
-
-  const recentSearchesArray = recentSearchesData ? JSON.parse(recentSearchesData) : [];
-  const newRecentSearches = recentSearchesArray.filter((item: RecentSearch) => item.id !== search.id);
-
-  await LocalStorage.setItem("recentSearches", JSON.stringify(newRecentSearches));
-};
-
 type ShowProps = {
   show: ShowResponse;
   isInRecentSearches?: boolean;
-  revalidate?: () => void;
+  removeRecentSearch?: (search: RecentSearch) => Promise<void>;
+  addRecentSearch?: (search: RecentSearch) => Promise<void>;
 };
 
 function Show(showProps: ShowProps) {
@@ -173,16 +159,13 @@ function Show(showProps: ShowProps) {
       }
       actions={
         <ActionPanel>
-          <Action
+          <Action.Push
             title="Show Seasons"
             icon={Icon.Image}
-            onAction={async () => {
+            target={show.id !== undefined && <Seasons id={show.id} />}
+            onPush={async () => {
               if (show.id) {
-                // NOTE: There is a bug where even if revalidate is called, the list doesn't update
-                //       until we go back to root and re-enter the command
-                await updateRecentSearches({ name: title, id: show.id });
-                showProps.revalidate?.();
-                push(<Seasons id={show.id} />);
+                await showProps.addRecentSearch?.({ name: title, id: show.id });
               }
             }}
           />
@@ -237,8 +220,7 @@ function Show(showProps: ShowProps) {
                 style={Action.Style.Destructive}
                 icon={Icon.Trash}
                 onAction={async () => {
-                  await removeFromRecentSearches({ name: title, id: show.id ?? 0 });
-                  showProps.revalidate?.();
+                  await showProps.removeRecentSearch?.({ name: title, id: show.id ?? 0 });
                 }}
                 shortcut={{ modifiers: ["ctrl"], key: "x" }}
               />
