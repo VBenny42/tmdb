@@ -65,8 +65,8 @@ export default function TvShowEpisode({
           <Detail.Metadata.Label title="Air Date" text={firstAirDate} />
           <Detail.Metadata.Label title="Season Name" text={seasonName} />
           <Detail.Metadata.TagList title="Season and Episode Number">
-            <Detail.Metadata.TagList.Item text={`${seasonNumber}`} color={Color.Blue} />
-            <Detail.Metadata.TagList.Item text={`${episodeNumber}`} color={Color.Green} />
+            <Detail.Metadata.TagList.Item text={seasonNumber.toString()} color={Color.Blue} />
+            <Detail.Metadata.TagList.Item text={episodeNumber.toString()} color={Color.Green} />
           </Detail.Metadata.TagList>
           <Detail.Metadata.Label
             title="Runtime"

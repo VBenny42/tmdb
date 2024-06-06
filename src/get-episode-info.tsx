@@ -24,11 +24,6 @@ import { getSeasonStartEnd } from "./helpers";
 import { RecentSearch, useRecentSearches } from "./hooks";
 
 export default function Command() {
-  const preferences = getPreferenceValues();
-  if (preferences.currShow === undefined || preferences.currShowSeason === undefined) {
-    showToast(Toast.Style.Failure, "Note: No show and/or season is set in preferences");
-  }
-
   const [query, setQuery] = useState("");
 
   const { data: trendingResults, isLoading: isLoadingTrendingResults } = useCachedPromise(async () => {
@@ -193,20 +188,18 @@ function Show(showProps: ShowProps) {
           <Action
             title="Show Current Season From Preferences"
             icon={Icon.Star}
-            onAction={() => {
+            onAction={async () => {
               const { currShow, currShowSeason } = getPreferenceValues();
-              if (currShow !== undefined && currShowSeason !== undefined) {
-                getSeasonStartEnd().then((data) => {
-                  const { seasonStart, seasonEnd } = data;
-                  push(
-                    <Episodes
-                      id={currShow}
-                      seasonNumber={currShowSeason}
-                      seasonStart={seasonStart}
-                      seasonEnd={seasonEnd}
-                    />,
-                  );
-                });
+              if (currShow && currShowSeason) {
+                const { seasonStart, seasonEnd } = await getSeasonStartEnd();
+                push(
+                  <Episodes
+                    id={currShow}
+                    seasonNumber={currShowSeason}
+                    seasonStart={seasonStart}
+                    seasonEnd={seasonEnd}
+                  />,
+                );
               } else {
                 showToast(Toast.Style.Failure, "No show and/or season is set in preferences");
               }

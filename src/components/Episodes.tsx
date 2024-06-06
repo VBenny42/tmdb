@@ -80,7 +80,7 @@ function Episodes({
 
         let markdown = `![TV Show Banner](https://image.tmdb.org/t/p/w500${episode.still_path})\n\n${overview}`;
 
-        if (episode?.name?.length > 28) {
+        if ((episode?.name?.length ?? 0) > 28) {
           markdown = `${markdown}\n\n**${episode.name}**`;
         }
 
