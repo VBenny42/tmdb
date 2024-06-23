@@ -1,6 +1,5 @@
 import { getPreferenceValues } from "@raycast/api";
 import { moviedb } from "./api";
-import { useCurrentSeason } from "./hooks/current-season";
 
 export function getRating(rating?: number) {
   const STAR = "⭐";
@@ -33,15 +32,4 @@ export function formatTVEpisodeDuration(minutes: number): string {
   } else {
     return `${hoursString}h ${minutesString}m`;
   }
-}
-
-const { currentSeason } = useCurrentSeason();
-
-export async function getSeasonStartEnd() {
-  const seasons = await moviedb.tvInfo({ id: currentSeason?.id ?? 1 }).then((response) => response.seasons || []);
-
-  const seasonStart = seasons?.[0].season_number || 0;
-  const seasonEnd = seasons?.[seasons.length - 1].season_number || 0;
-
-  return { seasonStart, seasonEnd };
 }
