@@ -20,8 +20,8 @@ import Posters from "./components/Posters";
 import Backdrops from "./components/Backdrops";
 import Seasons from "./components/Seasons";
 import Episodes from "./components/Episodes";
-import { getSeasonStartEnd } from "./helpers";
-import { RecentSearch, useRecentSearches } from "./hooks";
+import { RecentSearch, useRecentSearches } from "./hooks/recent-searches";
+import { useCurrentSeason } from "./hooks/current-season";
 
 export default function Command() {
   const [query, setQuery] = useState("");
@@ -42,14 +42,14 @@ export default function Command() {
       keepPreviousData: true,
     },
   );
-
+  console.log("here");
   const {
     recentSearches,
     recentSearchesWithInfo,
     isLoading: isLoadingRecentSearches,
     addRecentSearch,
     removeRecentSearch,
-  } = useRecentSearches();
+  } = useRecentSearches("TV_SHOW_RECENT_SEARCHES");
 
   const showTrendingSection =
     (!searchResults || searchResults.length === 0 || query.length === 0) && (recentSearches?.length ?? 0) <= 5;
@@ -126,6 +126,8 @@ function Show(showProps: ShowProps) {
   const rating = show.vote_average ? show.vote_average.toFixed(1) : "Not Rated";
   const { push } = useNavigation();
 
+  const { currentSeason, seasonStart, seasonEnd } = useCurrentSeason();
+
   return (
     <List.Item
       icon={`https://image.tmdb.org/t/p/w200/${show.poster_path}`}
@@ -186,22 +188,20 @@ function Show(showProps: ShowProps) {
             shortcut={{ modifiers: ["cmd", "shift"], key: "b" }}
           />
           <Action
-            title="Show Current Season From Preferences"
+            title="Show Current Set Season"
             icon={Icon.Star}
             onAction={async () => {
-              const { currShow, currShowSeason } = getPreferenceValues();
-              if (currShow && currShowSeason) {
-                const { seasonStart, seasonEnd } = await getSeasonStartEnd();
+              if (currentSeason) {
                 push(
                   <Episodes
-                    id={currShow}
-                    seasonNumber={currShowSeason}
-                    seasonStart={seasonStart}
-                    seasonEnd={seasonEnd}
+                    id={currentSeason.id}
+                    seasonNumber={currentSeason.season_number}
+                    seasonStart={seasonStart ?? 0}
+                    seasonEnd={seasonEnd ?? 0}
                   />,
                 );
               } else {
-                showToast(Toast.Style.Failure, "No show and/or season is set in preferences");
+                showToast(Toast.Style.Failure, "No show and/or season has been set");
               }
             }}
             shortcut={{ modifiers: ["cmd"], key: "d" }}

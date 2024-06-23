@@ -7,9 +7,9 @@ export type RecentSearch = {
   id: number;
 };
 
-export function useRecentSearches() {
+export function useRecentSearches(localStorageKey: string) {
   const { data, isLoading, mutate } = useCachedPromise(async () => {
-    const recentSearchesData = await LocalStorage.getItem<string>("recentSearches");
+    const recentSearchesData = await LocalStorage.getItem<string>(localStorageKey);
     const recentSearches: RecentSearch[] = recentSearchesData ? JSON.parse(recentSearchesData) : [];
 
     const recentSearchesWithInfo = await Promise.all(
@@ -28,7 +28,7 @@ export function useRecentSearches() {
 
     const newRecentSearches = [search, ...data.recentSearches.filter((s) => s.id !== search.id)].slice(0, 10);
 
-    await LocalStorage.setItem("recentSearches", JSON.stringify(newRecentSearches));
+    await LocalStorage.setItem(localStorageKey, JSON.stringify(newRecentSearches));
     mutate();
   }
 
@@ -38,7 +38,7 @@ export function useRecentSearches() {
     }
 
     const newRecentSearches = data.recentSearches.filter((s) => s.id !== search.id);
-    await LocalStorage.setItem("recentSearches", JSON.stringify(newRecentSearches));
+    await LocalStorage.setItem(localStorageKey, JSON.stringify(newRecentSearches));
     mutate();
   }
 

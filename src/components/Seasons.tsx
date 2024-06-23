@@ -4,6 +4,7 @@ import { SimpleSeason } from "moviedb-promise";
 import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
 import Episodes from "./Episodes";
+import { useCurrentSeason } from "../hooks/current-season";
 
 function Seasons({ id }: { id: number }) {
   const [selectedSeason, setSelectedSeason] = useState<string>("all");
@@ -26,6 +27,8 @@ function Seasons({ id }: { id: number }) {
 
   const seasonStart = seasonData?.[0].season_number || 0;
   const seasonEnd = seasonData?.[seasonData.length - 1].season_number || 0;
+
+  const { setCurrentSeason } = useCurrentSeason();
 
   return (
     <Grid
@@ -78,6 +81,24 @@ function Seasons({ id }: { id: number }) {
                 title={`Copy TMDB URL`}
                 shortcut={{ modifiers: ["cmd"], key: "." }}
               />
+              <ActionPanel.Section>
+                <Action
+                  title="Set as Current Season"
+                  icon={Icon.Star}
+                  shortcut={{ modifiers: ["cmd"], key: "s" }}
+                  onAction={async () => {
+                    setCurrentSeason({ id, season_number: season.season_number || 0 })
+                      .then(() =>
+                        showToast(
+                          Toast.Style.Success,
+                          "Current season set",
+                          `Season ${season.season_number || 0} set as current season`,
+                        ),
+                      )
+                      .catch((error) => showToast(Toast.Style.Failure, "Failed to set current season", error.message));
+                  }}
+                />
+              </ActionPanel.Section>
             </ActionPanel>
           }
         />
