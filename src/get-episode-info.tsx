@@ -49,7 +49,7 @@ export default function Command() {
     isLoading: isLoadingRecentSearches,
     addRecentSearch,
     removeRecentSearch,
-  } = useRecentSearches();
+  } = useRecentSearches("recentTVShowSearches");
 
   const showTrendingSection =
     (!searchResults || searchResults.length === 0 || query.length === 0) && (recentSearches?.length ?? 0) <= 5;
@@ -81,30 +81,12 @@ export default function Command() {
 
       {showTrendingSection ? (
         <List.Section title="Trending">
-          {trendingResults?.map((result) => {
-            return (
-              <Show
-                key={result.id}
-                show={result}
-                addRecentSearch={addRecentSearch}
-                removeRecentSearch={removeRecentSearch}
-              />
-            );
-          })}
+          {trendingResults?.map((result) => <Show key={result.id} show={result} addRecentSearch={addRecentSearch} />)}
         </List.Section>
       ) : null}
 
       <List.Section title="Search Results">
-        {searchResults?.map((result) => {
-          return (
-            <Show
-              key={result.id}
-              show={result}
-              addRecentSearch={addRecentSearch}
-              removeRecentSearch={removeRecentSearch}
-            />
-          );
-        })}
+        {searchResults?.map((result) => <Show key={result.id} show={result} addRecentSearch={addRecentSearch} />)}
       </List.Section>
     </List>
   );
