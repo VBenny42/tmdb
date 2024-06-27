@@ -4,7 +4,7 @@
   "title": "The Movie Database",
   "description": "Browse through hundreds of thousands of movies and tv shows, see new releases, parental guide and much more.",
   "icon": "command-icon.png",
-  "author": "VBenny42",
+  "author": "Aayush9029",
   "contributors": [
     "andreaselia",
     "thomaslombart",
@@ -18,6 +18,34 @@
   ],
   "license": "MIT",
   "commands": [
+    {
+      "name": "search",
+      "title": "Search",
+      "subtitle": "The Movie Database",
+      "description": "Search for movies or TV shows.",
+      "mode": "view"
+    },
+    {
+      "name": "now-playing",
+      "title": "Now Playing",
+      "subtitle": "The Movie Database",
+      "description": "View movies or TV shows that are playing right now.",
+      "mode": "view"
+    },
+    {
+      "name": "top-rated",
+      "title": "Top Rated",
+      "subtitle": "The Movie Database",
+      "description": "View the best movies or TV shows of all time.",
+      "mode": "view"
+    },
+    {
+      "name": "upcoming-movies",
+      "title": "Upcoming Movies",
+      "subtitle": "The Movie Database",
+      "description": "View the upcoming movies.",
+      "mode": "view"
+    },
     {
       "name": "get-episode-info",
       "title": "Get Episode Info",
